@@ -14,16 +14,9 @@ function getNodeWidth(kind) {
   return 172;
 }
 
-// Assign widths first, since row width requirements depend on the actual
-// mix of node widths in that row (an 'origin'/'end' box is wider than a
-// normal one), not just a node count.
+
 NODES.forEach(n => { n.width = getNodeWidth(n.kind); n.height = 70; });
 
-// treeWidth must be at least as wide as the most crowded row actually
-// needs — every node's width plus a guaranteed minimum gap around each —
-// or a densely-populated row could overlap itself. This makes that
-// impossible by construction rather than something to re-check by hand
-// every time a node gets added.
 const widestRowRequirement = Math.max(...Object.values(rows).map(row =>
   row.reduce((sum, n) => sum + n.width, 0) + MIN_GAP * (row.length + 1)
 ));
@@ -32,11 +25,7 @@ const treeWidth = Math.max(maxCols * COL_W + 100, 1100, widestRowRequirement);
 
 genKeys.forEach((g, rowIndex) => {
   const row = rows[g];
-  // Pack this row's actual box widths left-to-right with MIN_GAP between
-  // them, then center the whole packed group within treeWidth — rather
-  // than dividing treeWidth into equal-width slots regardless of how wide
-  // each box actually is, which is what could let a wide 'origin'/'end'
-  // box overlap its neighbor.
+
   const contentWidth = row.reduce((sum, n) => sum + n.width, 0) + MIN_GAP * (row.length - 1);
   let cursor = (treeWidth - contentWidth) / 2;
   row.forEach(n => {
@@ -46,11 +35,6 @@ genKeys.forEach((g, rowIndex) => {
   });
 });
 
-// Runtime safety net: the packing above should make same-row overlap
-// mathematically impossible, but this is cheap to verify and will warn
-// loudly in the console if a future edit to MIN_GAP/COL_W/getNodeWidth
-// ever breaks that guarantee — catching it immediately instead of
-// requiring another round of manual screenshot inspection.
 Object.values(rows).forEach(row => {
   for (let i = 0; i < row.length; i++) {
     for (let j = i + 1; j < row.length; j++) {
@@ -69,20 +53,11 @@ const tree = document.getElementById('tree');
 tree.style.width = treeWidth + 'px';
 tree.style.height = treeHeight + 'px';
 
-// Declared up front (rather than down in the Filter System section below)
-// because buildEdges() calls updateVisibility(), and buildEdges() runs
-// immediately, before execution ever reaches that section — a `const`
-// declared later would still be in the temporal dead zone at that point.
 const activeFilters = {
   node: { coral: true, bronze: true, gold: true },
   edge: { 'blood-edge': true, 'succ-edge': true, 'reincarnation-edge': true }
 };
 
-// Render Nodes first, so we can measure their real rendered height below —
-// edges are anchored to n.height, and CSS only guarantees a *minimum* height
-// (min-height:70px), so any node whose text wraps onto extra lines will be
-// taller than the 70px default. Building edges before nodes existed in the
-// DOM meant that mismatch could never be corrected.
 NODES.forEach((n, idx) => {
   const btn = document.createElement('button');
   const mainKind = n.kind.includes('coral') ? 'coral' : n.kind.includes('bronze') ? 'bronze' : 'gold';
@@ -99,7 +74,6 @@ NODES.forEach((n, idx) => {
   tree.appendChild(btn);
 });
 
-// SVG setup
 const svgNS = 'http://www.w3.org/2000/svg';
 const svg = document.createElementNS(svgNS,'svg');
 svg.classList.add('edges');
@@ -122,19 +96,6 @@ function curveHorizontal(x1, y1, x2, y2) {
   return `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`;
 }
 
-// A blood-edge whose parent and child are more than one row apart (e.g. a
-// child born generations before a regent row like Peneleos got inserted
-// between them) risks running straight through whatever occupies the
-// intervening row(s). The first version of this fix just bowed every such
-// edge left by a fixed amount — which fixed the case it was written for
-// (Zagreus/Dionysus past Semele's row) but was never re-checked once new
-// nodes (Alcmaeon) were later added into a *different* skip-edge's path
-// (Thersander/Tisamenus past Peneleos), and it clipped straight through
-// Alcmaeon's box. A fixed blind offset can't stay correct as the tree
-// grows — so this checks the actual bounding box of every node the curve
-// would pass near, and picks the smallest bow (trying both directions)
-// that actually clears all of them, instead of assuming one distance and
-// direction will always be enough.
 function bezierPoint(t, x0, y0, x1, y1, x2, y2, x3, y3) {
   const mt = 1 - t;
   return {
@@ -182,8 +143,7 @@ function curveSkipAware(x1, y1, x2, y2, gen1, gen2) {
       if (clears(sign * mag)) return pathFor(sign * mag).d;
     }
   }
-  // Nothing fully cleared (very dense area) — the largest bow left is
-  // still a better fallback than a straight drop through everything.
+
   return pathFor(-450).d;
 }
 
@@ -198,13 +158,6 @@ function addPath(d, cls, sourceId, targetId){
   return p;
 }
 
-// Measures each node's real rendered height, then (re)builds every edge
-// from scratch. Exposed as a function (not a one-shot block) because the
-// webfonts (Cinzel/Crimson Pro) load with &display=swap, meaning the
-// browser paints with fallback fonts first and swaps the real font in
-// later — text can reflow to a different height *after* this has already
-// run once. Re-running it once fonts are confirmed ready corrects any
-// drift from that swap.
 function buildEdges(){
   NODES.forEach(n => {
     const el = document.getElementById('node-' + n.id);
@@ -218,10 +171,7 @@ function buildEdges(){
     const parents = (n.parents||[]).map(pid => byId[pid]).filter(Boolean);
 
     if (parents.length === 2 && Math.abs(parents[0].y - parents[1].y) < 10) {
-      // Married co-parents on the same row: instead of two separate lines
-      // crossing into every child (which tangles into an X-mess once there
-      // are several children), draw one shared "marriage bar" between the
-      // parents and a single trunk line down to each child.
+
       const [p1, p2] = parents;
       const barY = p1.y + (p1.height/2) + 18;
       const midX = (p1.x + p2.x) / 2;
@@ -237,31 +187,17 @@ function buildEdges(){
       });
     }
 
-    // Only draw a succession edge when it actually tells the reader
-    // something the blood edge doesn't — who a ruler took the throne from,
-    // when that's someone other than their own parent (a regent, a skipped
-    // generation, someone from outside the bloodline entirely). When
-    // succFrom points to a node that's already one of this person's blood
-    // parents, the blood edge already says everything the succession edge
-    // would, and drawing both just doubles the same line. That's obvious
-    // where several siblings fan out from one parent (it visibly diverges
-    // into two close, parallel curves), but the exact same redundancy
-    // exists wherever an only child inherits directly — it just isn't
-    // visible there, since the two curves happen to overlap almost
-    // exactly. Skipping it here keeps the rule consistent everywhere,
-    // not just in the one spot it happened to be easy to notice.
     if(n.succFrom && !(n.parents || []).includes(n.succFrom)){
       const p = byId[n.succFrom];
       if(p) {
         let pathData;
 
-        // Case 1: Same horizontal row
         if (Math.abs(p.y - n.y) < 10) {
           const startX = p.x <= n.x ? p.x + (p.width / 2) : p.x - (p.width / 2);
           const endX = n.x <= p.x ? n.x - (n.width / 2) : n.x + (n.width / 2);
           pathData = curveHorizontal(startX, p.y, endX, n.y);
         }
-        // Case 2: Upward succession (e.g. Pentheus [Gen 2] -> Polydorus [Gen 1])
+
         else if (p.y > n.y) {
           const startX = p.x + (p.width / 2);
           const startY = p.y;
@@ -273,17 +209,13 @@ function buildEdges(){
           const cp2y = endY + 40;
           pathData = `M ${startX} ${startY} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${endX} ${endY}`;
         }
-        // Case 3: Downward succession (Standard top-to-bottom)
+
         else {
           const startX = p.x;
           const startY = p.y + (p.height / 2);
           const endX = n.x;
           const endY = n.y - (n.height / 2);
-          // Same obstacle-aware routing as skip-row blood edges — a
-          // succession edge can skip rows just as easily (Thersander to
-          // Peneleos skips over Alcmaeon's row) and was clipping straight
-          // through his box before this, which is doubly misleading since
-          // Alcmaeon never actually held the throne at all.
+
           pathData = curveSkipAware(startX, startY, endX, endY, p.gen, n.gen);
         }
 
@@ -293,32 +225,18 @@ function buildEdges(){
 
     if(n.id === 'zagreus'){
       const d = byId['dionysus'];
-      // Bowed sideways rather than a straight vertical drop — a direct line
-      // would run right through the Semele/Cadmus/Harmonia column in
-      // between, visually reading as if it terminated at Semele's box
-      // instead of passing through to Dionysus two rows further down.
-      // Routed through the same obstacle-checking logic as skip-row blood
-      // edges, rather than a separate hand-tuned bow, so it stays correct
-      // if anything ever gets added into that corridor too.
+
       const y1 = n.y + (n.height/2), y2 = d.y - (d.height/2);
       const pathData = curveSkipAware(n.x, y1, d.x, y2, n.gen, d.gen);
       addPath(pathData, 'reincarnation-edge', n.id, d.id);
     }
     if(n.id === 'alcmaeon'){
-      // Not a blood or succession relationship (he's an Argive prince, not
-      // Theban royalty) so it doesn't belong in the filterable edge
-      // categories above — but leaving him with *no* connecting line at all
-      // makes him look like an unrelated, unexplained figure floating in
-      // the middle of the tree. This stays as a plain, uncategorized
-      // connector: always visible, not tied to any filter toggle.
+
       const l = byId['laodamas'];
       addPath(curve(l.x, l.y + (l.height/2), n.x, n.y - (n.height/2)), 'vengeance-edge', l.id, n.id);
     }
   });
 
-  // Edge filter state (coral/bronze/gold node visibility, etc.) needs to be
-  // re-applied any time edges are rebuilt, since the fresh <path> elements
-  // start out with no 'dimmed' class regardless of the current filter state.
   if (typeof updateVisibility === 'function') updateVisibility();
 }
 
@@ -328,24 +246,11 @@ if (document.fonts && document.fonts.ready) {
   document.fonts.ready.then(buildEdges);
 }
 
-// On narrow viewports the tree canvas (treeWidth, often 1000px+) is much
-// wider than the screen, and its root nodes sit horizontally centered
-// within that canvas — so a horizontal scroll container starting at its
-// default scrollLeft:0 shows an almost entirely empty left margin with no
-// visible nodes and no indication there's content to the right. Center the
-// initial scroll position on load so the root of the tree is what a mobile
-// visitor actually sees first.
 const scrollWrap = document.querySelector('.scroll-wrap');
 if (scrollWrap && scrollWrap.scrollWidth > scrollWrap.clientWidth) {
   scrollWrap.scrollLeft = (scrollWrap.scrollWidth - scrollWrap.clientWidth) / 2;
 }
 
-// ---------- Succession Timeline ----------
-// Builds REIGNS (from data.js) as a strictly-ordered vertical list inside
-// the shared modal, independent of the tree's blood/succession edges
-// above. This is what actually answers "who held the throne, when" — the
-// tree can't, since a person who reigns at multiple non-contiguous points
-// (Creon, twice) can only have one succFrom edge, not two.
 function renderTimelineList() {
   const el = document.getElementById('timelineList');
   if (!el || typeof REIGNS === 'undefined') return;
@@ -390,7 +295,6 @@ function renderTimelineList() {
   });
 }
 
-// ---------- Filter System ----------
 document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const type = btn.getAttribute('data-type');
@@ -439,7 +343,6 @@ function updateVisibility() {
   });
 }
 
-// ---------- Bloodline Path Tracing ----------
 let pathMode = false;
 let pathSelection = [];
 const pathModeBtn = document.getElementById('pathModeBtn');
@@ -466,12 +369,6 @@ function clearPathSelection() {
   });
 }
 
-// Walks the blood ('parents') or succession ('succFrom') graph upward from
-// a starting node, recording the shortest route back to every ancestor it
-// can reach. Used from both ends of a selected pair to find their nearest
-// shared ancestor — a plain "walk up from one side" assumption breaks for
-// married co-parents (Cadmus & Harmonia, Zeus & Persephone), where a node
-// can have two valid parents to climb through.
 function ancestorsWithPath(startId, field) {
   const result = new Map();
   const queue = [{ id: startId, dist: 0, path: [startId] }];
@@ -506,14 +403,6 @@ function findPath(idA, idB, field) {
   return upA.concat(upB);
 }
 
-// Finds the rendered <path> element connecting a child to one of its
-// parents. Handles the married co-parents case specially: when a child has
-// two co-parents sharing one drawn trunk line, the trunk's data-source is
-// always whichever parent happened to be listed first — even if the path
-// being traced goes through the *other* parent — so a literal source/target
-// match alone would miss it. Also lights up the short marriage-bar line
-// between the two parents, so the couple reads as connected rather than
-// the trunk appearing to start mid-air.
 function highlightEdgeBetween(childId, parentId, edgeClass) {
   const child = byId[childId];
   const parents = (child.parents || []).map(pid => byId[pid]).filter(Boolean);
@@ -588,7 +477,6 @@ function handlePathClick(n) {
   showPath(pathSelection[0], pathSelection[1]);
 }
 
-// Modal System & Focus Management
 let lastFocusedElement = null;
 const overlay = document.getElementById('overlay');
 const closeBtn = document.getElementById('closeBtn');
@@ -599,9 +487,6 @@ const cardContainer = document.getElementById('cardContainer');
 const figureCardBody = document.getElementById('figureCardBody');
 const timelineModalBody = document.getElementById('timelineModalBody');
 
-// Shared by both modal types (a figure's card, and the succession
-// timeline) — background-hiding, scroll-locking, and focus handling are
-// identical either way; only what's inside #cardContainer differs.
 function openOverlay(ariaLabel) {
   lastFocusedElement = document.activeElement;
   document.body.style.overflow = 'hidden';
@@ -704,11 +589,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeCard();
   } else if (e.key === 'Tab') {
-    // Scoped to whichever content body is actually visible — both bodies
-    // live inside #overlay at all times (one just has the `hidden`
-    // attribute), and querySelectorAll doesn't know or care about that,
-    // so querying the whole overlay would pull in focusable elements
-    // from the hidden body too and break the trap.
+
     const visibleBody = figureCardBody.hidden ? timelineModalBody : figureCardBody;
     const focusables = [closeBtn, ...visibleBody.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')];
     const first = focusables[0];
