@@ -1,13 +1,5 @@
-// House of Cadmus — genealogy data
-// Each entry: id, name, epithet, fate, kind (color/style categories),
-// gen (row placement — fractional values insert a node between two
-// existing rows without renumbering everything else), parents (blood,
-// drives blood-edges), succFrom (who they took the throne from, drives
-// succession edges), father/mother (display text — not necessarily a
-// modeled node), facts, sources.
-
 const NODES = [
-  // --- ORPHIC PROLOGUE (Gen -1) ---
+
   {id:'zeus', name:'Zeus', epithet:'King of the Gods', fate:'Avenges Zagreus; Engineers His Rebirth', kind:'gold origin', gen:-1,
     father:'Cronus', mother:'Rhea',
     facts:[
@@ -37,7 +29,6 @@ const NODES = [
     ],
     sources:['Diodorus Siculus 4.4.1–2','Hyginus, Fabulae 167','Nonnus, Dionysiaca 6','Clement, Protrepticus 2.8–9']},
 
-  // --- GENERATION 0 ---
   {id:'cadmus', name:'Cadmus', epithet:'m. Harmonia, Founder of Thebes', fate:'Exiled; Turned into Serpents', kind:'coral origin', gen:0,
     father:'Agenor', mother:'Telephassa',
     facts:[
@@ -60,7 +51,6 @@ const NODES = [
     ],
     sources:['Apollodorus, Bibl. 3.4.2','Hesiod, Theogony 933–937','Diodorus Siculus 4.2, 5.48–49','Ovid, Met. 4.563–603']},
 
-  // --- GENERATION 1 ---
   {id:'autonoe', name:'Autonoe', epithet:'m. Aristaeus', fate:'Exiled in grief after son\'s death', kind:'coral', gen:1, parents:['cadmus','harmonia'],
     father:'Cadmus', mother:'Harmonia',
     facts:[
@@ -109,7 +99,7 @@ const NODES = [
     ],
     sources:['Apollodorus, Bibl. 3.5.5','Diodorus Siculus 4.2', 'Nonnus, Dionysiaca 5.207-212']},
 
-  // --- GENERATION 2 ---
+
   {id:'actaeon', name:'Actaeon', fate:'Torn apart by his hounds', kind:'coral', gen:2, parents:['autonoe'],
     father:'Aristaeus', mother:'Autonoe',
     facts:['A hunter trained by Chiron.', 'Stumbles upon Artemis bathing; transformed into a stag by the goddess and torn to pieces by his own 50 hunting dogs.'],
@@ -148,7 +138,7 @@ const NODES = [
     ],
     sources:['Apollodorus, Bibl. 3.5.5']},
 
-  // --- SUBSEQUENT GENERATIONS ---
+
   {id:'lycus', name:'Lycus', epithet:'Usurper Regent (m. Dirce)', fate:'Killed by Amphion & Zethus', kind:'coral regent', gen:3, succFrom:'labdacus',
     father:'Chthonius (or Hyrieus)', mother:'N/A',
     facts:[
@@ -189,7 +179,7 @@ const NODES = [
     ],
     sources:['Statius, Thebaid 2.276–279','Apollodorus, Bibl. 3.5.7–9','Sophocles, Oedipus Rex','Sophocles, Oedipus at Colonus','Pausanias 9.5.11']},
 
-  // --- GENERATION 5 ---
+
   {id:'creon', name:'Creon', epithet:'Regent of Thebes (Brother of Jocasta)', fate:'Loses Wife & Son; Reigns On, Broken', kind:'coral regent', gen:3.5, succFrom:'laius',
     father:'Menoeceus', mother:'N/A',
     facts:[
@@ -238,7 +228,7 @@ const NODES = [
     ],
     sources:['Sophocles, Antigone','Mimnermus, fr. 21 West (preserved in the Hypothesis to Sophocles\' Antigone)']},
 
-  // --- GENERATION 6 ---
+
   {id:'laodamas', name:'Laodamas', fate:'Killed by Alcmaeon in War', kind:'coral', gen:6, parents:['eteocles'], succFrom:'eteocles',
     father:'Eteocles', mother:'Unknown',
     facts:['Son of Eteocles; too young to rule after his father\'s death, so Creon reigns as regent until he comes of age. Rules Thebes during the attack of the Epigoni and is slain in battle by Alcmaeon.'],
@@ -292,19 +282,7 @@ const NODES = [
     sources:['Pausanias 9.5.16']}
 ];
 
-// Strict chronological throne-succession order — kept separate from the
-// blood/succession EDGES drawn on the tree above, because a "who did I
-// take the throne from" graph (one succFrom pointer per node) can't
-// cleanly represent a person who holds the throne at multiple
-// non-contiguous points in the story. Creon is the clearest case: he's a
-// single node in NODES, but reigns twice, in two different places in this
-// sequence — that can only be shown here, not as tree edges.
-// Each entry is one reign: `ids` is one id normally, or several for joint
-// /alternating rule (Eteocles & Polynices; Amphion & Zethus). `regent:true`
-// flags a non-blood or temporary hold on the throne (matches the dashed
-// "regent" border already used on the tree). Every step here is
-// individually citation-checked against Apollodorus, Bibliotheca 3.4–3.7
-// and Pausanias 9.5.
+
 const REIGNS = [
   { ids: ['cadmus'] },
   { ids: ['pentheus'] },
