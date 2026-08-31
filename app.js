@@ -17,7 +17,7 @@ function getNodeWidth(kind) {
 NODES.forEach(n => { n.width = getNodeWidth(n.kind); n.height = 70; });
 
 const widestRowRequirement = Math.max(...Object.values(rows).map(row =>
-  row.reduce((sum, n) => sum + n.width, 0) + MIN_GAP * (row.length + 1)
+  row.reduce((sum, n) => sum + n.width, 0) + MIN_GAP * (row.length - 1)
 ));
 const maxCols = Math.max(...Object.values(rows).map(r => r.length));
 const treeWidth = Math.max(maxCols * COL_W + 100, 1100, widestRowRequirement);
@@ -123,27 +123,32 @@ function curveSkipAware(x1, y1, x2, y2, gen1, gen2) {
     return { d: `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`, cp1x, cp2x };
   }
 
-  function clears(offset) {
+  function violations(offset) {
     const { cp1x, cp2x } = pathFor(offset);
-    if (cp1x < 10 || cp1x > treeWidth - 10 || cp2x < 10 || cp2x > treeWidth - 10) return false;
+    if (cp1x < 10 || cp1x > treeWidth - 10 || cp2x < 10 || cp2x > treeWidth - 10) return Infinity;
+    let count = 0;
     for (let step = 1; step <= 9; step++) {
       const p = bezierPoint(step / 10, x1, y1, cp1x, cp1y, cp2x, cp2y, x2, y2);
       for (const o of obstacles) {
         if (Math.abs(p.x - o.x) < o.width / 2 + margin && Math.abs(p.y - o.y) < o.height / 2 + margin) {
-          return false;
+          count++;
         }
       }
     }
-    return true;
+    return count;
   }
 
+  let bestOffset = -450, bestViolations = Infinity;
   for (const mag of [150, 190, 230, 270, 310, 350, 400, 450]) {
     for (const sign of [-1, 1]) {
-      if (clears(sign * mag)) return pathFor(sign * mag).d;
+      const offset = sign * mag;
+      const v = violations(offset);
+      if (v === 0) return pathFor(offset).d;
+      if (v < bestViolations) { bestViolations = v; bestOffset = offset; }
     }
   }
 
-  return pathFor(-450).d;
+  return pathFor(bestOffset).d;
 }
 
 function addPath(d, cls, sourceId, targetId){
@@ -233,6 +238,14 @@ function buildEdges(){
 
       const l = byId['laodamas'];
       addPath(curve(l.x, l.y + (l.height/2), n.x, n.y - (n.height/2)), 'vengeance-edge', l.id, n.id);
+    }
+    if(n.id === 'creon' && byId['eteocles']){
+      // Creon's second regency, after Eteocles and Polynices kill each other, before Laodamas comes of age.
+      // Creon's succFrom is already used for his first regency (laius -> creon), so this incoming
+      // edge is drawn as a special case rather than through the normal succFrom field.
+      const e = byId['eteocles'];
+      const pathData = curveSkipAware(e.x, e.y + (e.height/2), n.x, n.y - (n.height/2), e.gen, n.gen);
+      addPath(pathData, 'succ-edge', e.id, n.id);
     }
   });
 
@@ -531,7 +544,7 @@ function openCard(n){
   fateEl.textContent = n.fate;
   fateEl.className = 'fate-line ' + (n.kind.includes('coral') ? 'coral' : n.kind.includes('bronze') ? 'bronze' : 'gold');
   document.getElementById('cardFacts').innerHTML = n.facts.map(f => `<li>${f}</li>`).join('');
-  document.getElementById('cardSources').innerHTML = n.sources.map(s => `${s}`).join('<br>');
+  document.getElementById('cardSources').innerHTML = n.sources.join('<br>');
 
   openOverlay(n.name);
 }
