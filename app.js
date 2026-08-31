@@ -1,4 +1,3 @@
-
 const byId = {};
 NODES.forEach(n => byId[n.id] = n);
 
@@ -55,7 +54,7 @@ tree.style.height = treeHeight + 'px';
 
 const activeFilters = {
   node: { coral: true, bronze: true, gold: true },
-  edge: { 'blood-edge': true, 'succ-edge': true, 'reincarnation-edge': true }
+  edge: { 'blood-edge': true, 'succ-edge': true, 'reincarnation-edge': true, 'vengeance-edge': true }
 };
 
 NODES.forEach((n, idx) => {
@@ -223,14 +222,14 @@ function buildEdges(){
       }
     }
 
-    if(n.id === 'zagreus'){
+    if(n.id === 'zagreus' && byId['dionysus']){
       const d = byId['dionysus'];
 
       const y1 = n.y + (n.height/2), y2 = d.y - (d.height/2);
       const pathData = curveSkipAware(n.x, y1, d.x, y2, n.gen, d.gen);
       addPath(pathData, 'reincarnation-edge', n.id, d.id);
     }
-    if(n.id === 'alcmaeon'){
+    if(n.id === 'alcmaeon' && byId['laodamas']){
 
       const l = byId['laodamas'];
       addPath(curve(l.x, l.y + (l.height/2), n.x, n.y - (n.height/2)), 'vengeance-edge', l.id, n.id);
