@@ -191,7 +191,7 @@ function buildEdges(){
       });
     }
 
-    if(n.succFrom && !(n.parents || []).includes(n.succFrom)){
+    if(n.succFrom){
       const p = byId[n.succFrom];
       if(p) {
         let pathData;
