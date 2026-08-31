@@ -196,16 +196,22 @@ function buildEdges(){
       if(p) {
         let pathData;
 
+        // When the predecessor is also a blood parent, the succession edge would
+        // otherwise land on the exact same coordinates as the blood edge above and
+        // draw directly on top of it. Nudge it sideways so both lines stay visible.
+        const overlapsBlood = (n.parents || []).includes(n.succFrom);
+        const off = overlapsBlood ? 24 : 0;
+
         if (Math.abs(p.y - n.y) < 10) {
           const startX = p.x <= n.x ? p.x + (p.width / 2) : p.x - (p.width / 2);
           const endX = n.x <= p.x ? n.x - (n.width / 2) : n.x + (n.width / 2);
-          pathData = curveHorizontal(startX, p.y, endX, n.y);
+          pathData = curveHorizontal(startX, p.y + off, endX, n.y + off);
         }
 
         else if (p.y > n.y) {
-          const startX = p.x + (p.width / 2);
+          const startX = p.x + (p.width / 2) + off;
           const startY = p.y;
-          const endX = n.x;
+          const endX = n.x + off;
           const endY = n.y + (n.height / 2);
           const cp1x = startX + 50;
           const cp1y = startY;
@@ -215,9 +221,9 @@ function buildEdges(){
         }
 
         else {
-          const startX = p.x;
+          const startX = p.x + off;
           const startY = p.y + (p.height / 2);
-          const endX = n.x;
+          const endX = n.x + off;
           const endY = n.y - (n.height / 2);
 
           pathData = curveSkipAware(startX, startY, endX, endY, p.gen, n.gen);
