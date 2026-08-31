@@ -66,7 +66,7 @@ const NODES = [
       'Fosters the infant Dionysus (in Ovid\'s account), incurring Hera\'s wrath.',
       'Hera strikes her and her husband Athamas (King of Orchomenus) with madness.',
       'In Ovid\'s gentler telling, Ino leaps off a sea-cliff carrying her still-living son Melicertes; Apollodorus\'s harsher version instead has her kill him in a boiling cauldron before she jumps.',
-      'Holds a dual status: her mortal frame dies in tragedy, but Poseidon deifies her as the marine goddess Leucothea.'
+      'Poseidon deifies her as the marine goddess Leucothea.'
     ],
     sources:['Euripides, Bacchae 26–42','Apollodorus, Bibl. 1.9.1–2, 3.4.3','Ovid, Met. 4.416–542']},
 
@@ -229,7 +229,7 @@ const NODES = [
     sources:['Sophocles, Antigone','Mimnermus, fr. 21 West (preserved in the Hypothesis to Sophocles\' Antigone)']},
 
 
-  {id:'laodamas', name:'Laodamas', fate:'Killed by Alcmaeon in War', kind:'coral', gen:6, parents:['eteocles'], succFrom:'eteocles',
+  {id:'laodamas', name:'Laodamas', fate:'Killed by Alcmaeon in War', kind:'coral', gen:6, parents:['eteocles'], succFrom:'creon',
     father:'Eteocles', mother:'Unknown',
     facts:['Son of Eteocles; too young to rule after his father\'s death, so Creon reigns as regent until he comes of age. Rules Thebes during the attack of the Epigoni and is slain in battle by Alcmaeon.'],
     sources:['Apollodorus, Bibl. 3.7.2–3','Pausanias 9.5.13']},
