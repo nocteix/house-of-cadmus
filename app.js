@@ -5,6 +5,12 @@ NODES.forEach(n => byId[n.id] = n);
 // for the "GENERATION X" card label. They're the same for almost every node —
 // only nodes that need a different layout position (e.g. Creon, to sit beside
 // Oedipus despite his fractional gen: 3.5) set `row` explicitly in data.js.
+//
+// `pinAfter: '<id>'` excludes a node from the row's centering math and instead
+// places it immediately to the right of the named anchor node once the anchor's
+// own position is known. This lets Creon sit beside Oedipus without shifting
+// Oedipus off-center above his own children (which is what happens if both
+// nodes are centered together as one row).
 NODES.forEach(n => { if (n.row === undefined) n.row = n.gen; });
 
 const rows = {};
@@ -30,13 +36,27 @@ const treeWidth = Math.max(maxCols * COL_W + 100, 1100, widestRowRequirement);
 
 rowKeys.forEach((g, rowIndex) => {
   const row = rows[g];
+  const core = row.filter(n => !n.pinAfter);
+  const pinned = row.filter(n => n.pinAfter);
 
-  const contentWidth = row.reduce((sum, n) => sum + n.width, 0) + MIN_GAP * (row.length - 1);
+  const contentWidth = core.reduce((sum, n) => sum + n.width, 0) + MIN_GAP * (core.length - 1);
   let cursor = (treeWidth - contentWidth) / 2;
-  row.forEach(n => {
+  core.forEach(n => {
     n.x = cursor + n.width / 2;
     n.y = PAD_TOP + rowIndex * ROW_H + 45;
     cursor += n.width + MIN_GAP;
+  });
+
+  pinned.forEach(n => {
+    const anchor = byId[n.pinAfter];
+    n.y = PAD_TOP + rowIndex * ROW_H + 45;
+    if (!anchor || anchor.x === undefined) {
+      n.x = treeWidth / 2;
+    } else if (n.pinSide === 'left') {
+      n.x = anchor.x - anchor.width / 2 - MIN_GAP - n.width / 2;
+    } else {
+      n.x = anchor.x + anchor.width / 2 + MIN_GAP + n.width / 2;
+    }
   });
 });
 
