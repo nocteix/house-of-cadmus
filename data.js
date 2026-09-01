@@ -180,7 +180,7 @@ const NODES = [
     sources:['Statius, Thebaid 2.276–279','Apollodorus, Bibl. 3.5.7–9','Sophocles, Oedipus Rex','Sophocles, Oedipus at Colonus','Pausanias 9.5.11']},
 
 
-  {id:'creon', name:'Creon', epithet:'Regent of Thebes (Brother of Jocasta)', fate:'Loses Wife & Son; Reigns On, Broken', kind:'coral regent', gen:3.5, succFrom:'laius',
+  {id:'creon', name:'Creon', epithet:'Regent of Thebes (Brother of Jocasta)', fate:'Loses Wife & Son; Reigns On, Broken', kind:'coral regent', gen:3.5, row:4, succFrom:'laius',
     father:'Menoeceus', mother:'N/A',
     facts:[
       'Jocasta\'s brother. Serves as regent of Thebes twice, first between Laius\'s death and Oedipus solving the Sphinx\'s riddle, and again for the young Laodamas once Eteocles and Polynices kill each other.',
