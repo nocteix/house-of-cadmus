@@ -1,11 +1,17 @@
 const byId = {};
 NODES.forEach(n => byId[n.id] = n);
 
+// `row` controls vertical layout position; `gen` is kept separate and untouched
+// for the "GENERATION X" card label. They're the same for almost every node —
+// only nodes that need a different layout position (e.g. Creon, to sit beside
+// Oedipus despite his fractional gen: 3.5) set `row` explicitly in data.js.
+NODES.forEach(n => { if (n.row === undefined) n.row = n.gen; });
+
 const rows = {};
-NODES.forEach(n => { (rows[n.gen] = rows[n.gen] || []).push(n); });
+NODES.forEach(n => { (rows[n.row] = rows[n.row] || []).push(n); });
 
 const COL_W = 210, ROW_H = 190, PAD_TOP = 40, MIN_GAP = 40;
-const genKeys = Object.keys(rows).map(Number).sort((a,b) => a-b);
+const rowKeys = Object.keys(rows).map(Number).sort((a,b) => a-b);
 
 function getNodeWidth(kind) {
   if (kind.includes('origin')) return 200;
@@ -22,7 +28,7 @@ const widestRowRequirement = Math.max(...Object.values(rows).map(row =>
 const maxCols = Math.max(...Object.values(rows).map(r => r.length));
 const treeWidth = Math.max(maxCols * COL_W + 100, 1100, widestRowRequirement);
 
-genKeys.forEach((g, rowIndex) => {
+rowKeys.forEach((g, rowIndex) => {
   const row = rows[g];
 
   const contentWidth = row.reduce((sum, n) => sum + n.width, 0) + MIN_GAP * (row.length - 1);
@@ -46,7 +52,7 @@ Object.values(rows).forEach(row => {
   }
 });
 
-const treeHeight = PAD_TOP + genKeys.length * ROW_H + 80;
+const treeHeight = PAD_TOP + rowKeys.length * ROW_H + 80;
 
 const tree = document.getElementById('tree');
 tree.style.width = treeWidth + 'px';
@@ -103,14 +109,14 @@ function bezierPoint(t, x0, y0, x1, y1, x2, y2, x3, y3) {
   };
 }
 
-function curveSkipAware(x1, y1, x2, y2, gen1, gen2) {
-  const i1 = genKeys.indexOf(gen1), i2 = genKeys.indexOf(gen2);
+function curveSkipAware(x1, y1, x2, y2, row1, row2) {
+  const i1 = rowKeys.indexOf(row1), i2 = rowKeys.indexOf(row2);
   const lo = Math.min(i1, i2), hi = Math.max(i1, i2);
   if (hi - lo <= 1) return curve(x1, y1, x2, y2);
 
   const obstacles = [];
   for (let idx = lo + 1; idx < hi; idx++) {
-    (rows[genKeys[idx]] || []).forEach(n => obstacles.push(n));
+    (rows[rowKeys[idx]] || []).forEach(n => obstacles.push(n));
   }
   if (!obstacles.length) return curve(x1, y1, x2, y2);
 
@@ -184,10 +190,10 @@ function buildEdges(){
         addPath(`M ${p1.x} ${barY} L ${p2.x} ${barY}`, 'blood-edge', p1.id, p2.id);
         drawnMarriageBars.add(barKey);
       }
-      addPath(curveSkipAware(midX, barY, n.x, n.y - (n.height/2), p1.gen, n.gen), 'blood-edge', p1.id, n.id);
+      addPath(curveSkipAware(midX, barY, n.x, n.y - (n.height/2), p1.row, n.row), 'blood-edge', p1.id, n.id);
     } else {
       parents.forEach(p => {
-        addPath(curveSkipAware(p.x, p.y + (p.height/2), n.x, n.y - (n.height/2), p.gen, n.gen), 'blood-edge', p.id, n.id);
+        addPath(curveSkipAware(p.x, p.y + (p.height/2), n.x, n.y - (n.height/2), p.row, n.row), 'blood-edge', p.id, n.id);
       });
     }
 
@@ -226,7 +232,7 @@ function buildEdges(){
           const endX = n.x + off;
           const endY = n.y - (n.height / 2);
 
-          pathData = curveSkipAware(startX, startY, endX, endY, p.gen, n.gen);
+          pathData = curveSkipAware(startX, startY, endX, endY, p.row, n.row);
         }
 
         addPath(pathData, 'succ-edge', p.id, n.id);
@@ -237,7 +243,7 @@ function buildEdges(){
       const d = byId['dionysus'];
 
       const y1 = n.y + (n.height/2), y2 = d.y - (d.height/2);
-      const pathData = curveSkipAware(n.x, y1, d.x, y2, n.gen, d.gen);
+      const pathData = curveSkipAware(n.x, y1, d.x, y2, n.row, d.row);
       addPath(pathData, 'reincarnation-edge', n.id, d.id);
     }
     if(n.id === 'alcmaeon' && byId['laodamas']){
@@ -250,7 +256,7 @@ function buildEdges(){
       // Creon's succFrom is already used for his first regency (laius -> creon), so this incoming
       // edge is drawn as a special case rather than through the normal succFrom field.
       const e = byId['eteocles'];
-      const pathData = curveSkipAware(e.x, e.y + (e.height/2), n.x, n.y - (n.height/2), e.gen, n.gen);
+      const pathData = curveSkipAware(e.x, e.y + (e.height/2), n.x, n.y - (n.height/2), e.row, n.row);
       addPath(pathData, 'succ-edge', e.id, n.id);
     }
   });
